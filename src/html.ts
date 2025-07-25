@@ -1,5 +1,5 @@
 // import { log } from "./helpers"
-export type htmlKey = 'innerText'|'onclick'|'children'|'class'|'id'|'contentEditable'|'eventListeners'|'color'|'background'
+export type htmlKey = 'innerText'|'onclick'|'children'|'class'|'id'|'contentEditable'|'eventListeners'|'color'|'background'|'attributes'
 
 
 
@@ -20,6 +20,10 @@ export const htmlElement = (tag:string, text:string, cls:string, args?:Partial<R
 
       _element.style[key] = value
 
+    }else if (key === 'attributes'){
+      Object.entries(value as Record<string, string>).forEach(([attr, val]) => {
+        _element.setAttribute(attr, val);
+      });
     }else{
       _element[(key as 'innerText' | 'onclick' | 'id' | 'contentEditable')] = value
     }
