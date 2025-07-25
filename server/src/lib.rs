@@ -1,5 +1,7 @@
 use spacetimedb::{sats::u256, ReducerContext, Table};
 use sha2::{Sha256, Digest};
+// use primitive_types::U256;
+use ethnum::U256;
 
 #[spacetimedb::table(name = item, public)]
 pub struct Item {
@@ -39,6 +41,14 @@ pub fn put_item(ctx: &ReducerContext, id: u256) {
 }
 
 
+pub fn add_tree(ctx: &ReducerContext, id: u256) {
+  let z = U256::from(0u8);
+  let mut root = ctx.db.merkle_tree().id().find(z).unwrap();
+  while true{
+    const nextat = root.id +
+  }
+}
+
 
 #[spacetimedb::table(name = person)]
 pub struct Person {
@@ -46,9 +56,14 @@ pub struct Person {
 
 }
 
+
+
 #[spacetimedb::reducer(init)]
 pub fn init(_ctx: &ReducerContext) {
   // Called when the module is initially published
+  _ctx.db.merkle_tree().insert(MerkleTree {
+    id: U256::from(0u8),
+    left: None, right: None });
 }
 
 #[spacetimedb::reducer(client_connected)]
