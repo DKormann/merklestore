@@ -164,24 +164,6 @@ export const startDbConnection =()=>{
         ctx.reducers.addItem(hash)
         ctx.reducers.onAddTree((ctx, id)=>{
           console.log("Tree added",id);
-          
-          findProof(0n, id).then(pro=>{
-
-            getCheck(pro).then(check=>{
-
-              if (globalCheck.get() != check){
-                alert("Global check does not match")
-              }else{
-                console.log("Global check matches")
-              }
-              if (!checkProofContainsNode(pro, id)){
-                alert("Proof does not contain node")
-              }
-            })
-            
-          })
-          .catch(console.error)
-          
         })
 
         ctx.reducers.addTree(hash)
