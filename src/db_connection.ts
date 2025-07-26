@@ -58,11 +58,11 @@ export const startDbConnection =()=>{
           console.log("found", c.db.merkleTree.id.find(id));
 
           
-          let res:proof = {
-            id: tr.id,
-            check: tr.check,
-          }
-          if (tr.left != undefined) 
+          // let res:proof = {
+          //   id: tr.id,
+          //   check: tr.check,
+          // }
+          // if (tr.left != undefined) 
         })
         .onError(e=>reject(e.event?.message))
         .subscribe(`SELECT * FROM merkle_tree WHERE id = ${id}`)
