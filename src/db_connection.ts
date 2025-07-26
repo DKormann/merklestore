@@ -98,7 +98,25 @@ export const startDbConnection =()=>{
 
       const checkHash = (hash: bigint) => new Promise<boolean>((resolve, reject)=>{
         ctx.subscriptionBuilder()
-        .onApplied(c=>resolve(c.db.item.id.find(hash)!=undefined))
+        .onApplied(c=>{
+          let res = c.db.item.id.find(hash)!=undefined
+          if (res){
+
+            findProof(0n, hash).then(pro=>{
+              getCheck(pro).then(check=>{
+                if (globalCheck.get() != check){
+                  alert("Global check does not match")
+                }else{
+                  console.log("Global check matches")
+                }
+                if (!checkProofContainsNode(pro, hash)){
+                  alert("Proof does not contain node")
+                }
+              })
+            })
+            .catch(console.error)
+          }
+          resolve(res)})
         .onError(e=>{
           console.error(e.event?.message)
           reject(e.event?.message)
@@ -109,7 +127,6 @@ export const startDbConnection =()=>{
 
 
       const findProof = (root:bigint, id: bigint) => new Promise<proof>( (resolve, reject)=>{
-        console.log("finding", root, id)
         ctx.subscriptionBuilder()
         .onApplied(async c=>{
           let tr = c.db.merkleTree.id.find(root)
