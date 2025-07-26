@@ -9,8 +9,6 @@ pub struct Item {
   id: u256
 }
 
-  
-
 #[spacetimedb::table(name = merkle_tree, public)]
 pub struct MerkleTree {
   #[primary_key]
@@ -35,6 +33,10 @@ pub fn put_item(ctx: &ReducerContext, id: u256) {
 #[spacetimedb::reducer]
 pub fn add_tree(ctx:&ReducerContext, id: u256){
 
+  if ctx.db.merkle_tree().id().find(id).is_some() {
+    return;
+  }
+
   let tree = MerkleTree {
     id,
     check: id,
@@ -47,6 +49,7 @@ pub fn add_tree(ctx:&ReducerContext, id: u256){
 
 pub fn update_tree(ctx: &ReducerContext, root: u256, tree:MerkleTree) -> u256 {
   let mut parent = ctx.db.merkle_tree().id().find(root).unwrap();
+
   let id = tree.id;
   let mut hash = Sha256::new();
   let mut hash_update = |id:u256| {

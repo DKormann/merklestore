@@ -12,5 +12,4 @@ crate-type = ["cdylib"]
 spacetimedb = "1.2.0"
 log = "0.4"
 sha2 = "0.10"
-primitive-types = "0.13.1"
 ethnum = "1.5.2"

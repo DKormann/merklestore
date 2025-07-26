@@ -38,6 +38,8 @@ import { Add } from "./add_reducer.ts";
 export { Add };
 import { AddItem } from "./add_item_reducer.ts";
 export { AddItem };
+import { AddTree } from "./add_tree_reducer.ts";
+export { AddTree };
 import { IdentityConnected } from "./identity_connected_reducer.ts";
 export { IdentityConnected };
 import { IdentityDisconnected } from "./identity_disconnected_reducer.ts";
@@ -48,12 +50,16 @@ export { SayHello };
 // Import and reexport all table handle types
 import { ItemTableHandle } from "./item_table.ts";
 export { ItemTableHandle };
+import { MerkleTreeTableHandle } from "./merkle_tree_table.ts";
+export { MerkleTreeTableHandle };
 import { PersonTableHandle } from "./person_table.ts";
 export { PersonTableHandle };
 
 // Import and reexport all types
 import { Item } from "./item_type.ts";
 export { Item };
+import { MerkleTree } from "./merkle_tree_type.ts";
+export { MerkleTree };
 import { Person } from "./person_type.ts";
 export { Person };
 
@@ -66,6 +72,15 @@ const REMOTE_MODULE = {
       primaryKeyInfo: {
         colName: "id",
         colType: Item.getTypeScriptAlgebraicType().product.elements[0].algebraicType,
+      },
+    },
+    merkle_tree: {
+      tableName: "merkle_tree",
+      rowType: MerkleTree.getTypeScriptAlgebraicType(),
+      primaryKey: "id",
+      primaryKeyInfo: {
+        colName: "id",
+        colType: MerkleTree.getTypeScriptAlgebraicType().product.elements[0].algebraicType,
       },
     },
     person: {
@@ -81,6 +96,10 @@ const REMOTE_MODULE = {
     add_item: {
       reducerName: "add_item",
       argsType: AddItem.getTypeScriptAlgebraicType(),
+    },
+    add_tree: {
+      reducerName: "add_tree",
+      argsType: AddTree.getTypeScriptAlgebraicType(),
     },
     identity_connected: {
       reducerName: "identity_connected",
@@ -126,6 +145,7 @@ const REMOTE_MODULE = {
 export type Reducer = never
 | { name: "Add", args: Add }
 | { name: "AddItem", args: AddItem }
+| { name: "AddTree", args: AddTree }
 | { name: "IdentityConnected", args: IdentityConnected }
 | { name: "IdentityDisconnected", args: IdentityDisconnected }
 | { name: "SayHello", args: SayHello }
@@ -164,6 +184,22 @@ export class RemoteReducers {
 
   removeOnAddItem(callback: (ctx: ReducerEventContext, id: bigint) => void) {
     this.connection.offReducer("add_item", callback);
+  }
+
+  addTree(id: bigint) {
+    const __args = { id };
+    let __writer = new BinaryWriter(1024);
+    AddTree.getTypeScriptAlgebraicType().serialize(__writer, __args);
+    let __argsBuffer = __writer.getBuffer();
+    this.connection.callReducer("add_tree", __argsBuffer, this.setCallReducerFlags.addTreeFlags);
+  }
+
+  onAddTree(callback: (ctx: ReducerEventContext, id: bigint) => void) {
+    this.connection.onReducer("add_tree", callback);
+  }
+
+  removeOnAddTree(callback: (ctx: ReducerEventContext, id: bigint) => void) {
+    this.connection.offReducer("add_tree", callback);
   }
 
   onIdentityConnected(callback: (ctx: ReducerEventContext) => void) {
@@ -207,6 +243,11 @@ export class SetReducerFlags {
     this.addItemFlags = flags;
   }
 
+  addTreeFlags: CallReducerFlags = 'FullUpdate';
+  addTree(flags: CallReducerFlags) {
+    this.addTreeFlags = flags;
+  }
+
   sayHelloFlags: CallReducerFlags = 'FullUpdate';
   sayHello(flags: CallReducerFlags) {
     this.sayHelloFlags = flags;
@@ -219,6 +260,10 @@ export class RemoteTables {
 
   get item(): ItemTableHandle {
     return new ItemTableHandle(this.connection.clientCache.getOrCreateTable<Item>(REMOTE_MODULE.tables.item));
+  }
+
+  get merkleTree(): MerkleTreeTableHandle {
+    return new MerkleTreeTableHandle(this.connection.clientCache.getOrCreateTable<MerkleTree>(REMOTE_MODULE.tables.merkle_tree));
   }
 
   get person(): PersonTableHandle {
