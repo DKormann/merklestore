@@ -56,6 +56,8 @@ import { PersonTableHandle } from "./person_table.ts";
 export { PersonTableHandle };
 
 // Import and reexport all types
+import { HashPair } from "./hash_pair_type.ts";
+export { HashPair };
 import { Item } from "./item_type.ts";
 export { Item };
 import { MerkleTree } from "./merkle_tree_type.ts";

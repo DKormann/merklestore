@@ -1,9 +1,10 @@
 
 export {}
 
-import { startDbConnection } from "./db_connection";
+import { startDbConnection, globalCheck } from "./db_connection";
 import { htmlElement } from "./html"
-import { DbConnection } from "./module_bindings";
+
+
 
 
 
@@ -16,10 +17,12 @@ async function hashFile(file: File): Promise<bigint> {
 
 startDbConnection().then( dbConnection => {
 
+  const checkInfo = htmlElement('div', '', 'check-info');
   function createFileUpload() {
     const container = htmlElement('div', '', 'upload-container', {
       children: [
         htmlElement('h2', 'Document Hasher', 'upload-title'),
+        checkInfo,
         htmlElement('p', 'Select files to hash:', 'upload-description'),
         htmlElement('input', '', 'file-input', {
           attributes: { type: 'file', multiple: 'true' }
@@ -29,9 +32,22 @@ startDbConnection().then( dbConnection => {
 
     const fileInput = container.querySelector('.file-input') as HTMLInputElement;
 
+    const check_info = htmlElement('div', '', 'check-info');
+
+    
     const statusDiv = htmlElement('div', '', 'status-container');
     const fileInfo = htmlElement('div', '', 'file-info');
+    
+  
+  
+      globalCheck.subscribe(c=>{
+        checkInfo.innerHTML = "Global Check: " + c.toString()  
+      });
 
+      globalCheck.subscribeLater(c=>{
+        check_info.insertBefore(htmlElement('div', 'Global Check updated', 'check-info'), check_info.firstChild)
+      })
+    
 
     fileInput.addEventListener('change', async (event) => {
       const files = (event.target as HTMLInputElement).files;
@@ -60,7 +76,6 @@ startDbConnection().then( dbConnection => {
           fileInfo.appendChild(fileHeader);
           fileInfo.appendChild(hashContainer);
 
-          const check_info = htmlElement('div', '', 'check-info');
           fileInfo.appendChild(check_info);
 
 

@@ -1,4 +1,4 @@
-use spacetimedb::{sats::u256, ReducerContext, Table};
+use spacetimedb::{sats::u256, spacetimedb_lib::Hash, ReducerContext, SpacetimeType, Table};
 use sha2::{Sha256, Digest};
 // use primitive_types::U256;
 use ethnum::U256;
@@ -9,16 +9,33 @@ pub struct Item {
   id: u256
 }
 
+#[derive(SpacetimeType)]
+pub struct HashPair {
+  pub id: u256,
+  pub check: u256
+}
+
 #[spacetimedb::table(name = merkle_tree, public)]
 pub struct MerkleTree {
   #[primary_key]
   id: u256,
-  check: u256,
-  left: Option<u256>,
-  right: Option<u256>
+  left: Option<HashPair>,
+  right: Option<HashPair>
 }
 
 
+
+impl MerkleTree {
+  pub fn getcheck(&self) -> u256 {
+    let mut hash = Sha256::new();
+    self.left.as_ref().map(|x| hash.update(x.check.to_be_bytes()));
+    self.right.as_ref().map(|x| hash.update(x.check.to_be_bytes()));
+    hash.update(self.id.to_be_bytes());
+    let result = hash.finalize();
+    u256::from_be_bytes(*result.as_ref())
+  }
+} 
+    
 
 #[spacetimedb::reducer]
 pub fn add_item(ctx: &ReducerContext, id: u256) {
@@ -39,51 +56,31 @@ pub fn add_tree(ctx:&ReducerContext, id: u256){
 
   let tree = MerkleTree {
     id,
-    check: id,
     left: None,
     right: None
   };
   let tree = ctx.db.merkle_tree().insert(tree);
-  update_tree(ctx, u256::from(0u8), tree);
+  update_tree(ctx, u256::from(0u8), HashPair { id: tree.id, check: tree.getcheck() });
 }
 
-pub fn update_tree(ctx: &ReducerContext, root: u256, tree:MerkleTree) -> u256 {
+
+pub fn update_tree(ctx: &ReducerContext, root: u256, newtree:HashPair)->HashPair{
+  
   let mut parent = ctx.db.merkle_tree().id().find(root).unwrap();
-
-  let id = tree.id;
-  let mut hash = Sha256::new();
-  let mut hash_update = |id:u256| {
-    hash.update(id.to_be_bytes());
-  };
+  let id = newtree.id;
   if parent.id > id{
-    let left_hash =match parent.left {
-      None => {
-        parent.left = Some(id);
-        id }
-      Some(next_id) => { update_tree(ctx, next_id, tree) }
-    };
-    hash_update(left_hash);
-    if let Some(right) = parent.right {
-      hash_update(ctx.db.merkle_tree().id().find(right).unwrap().check);
-    }
-  } else {
-    if let Some(left) = parent.left {
-      hash_update(ctx.db.merkle_tree().id().find(left).unwrap().check);
-    }
-    let right_hash = match parent.right {
-      None => {
-        parent.right = Some(id);
-        id}
-      Some(next_id)=> { update_tree(ctx, next_id, tree)}
-    };
-    hash_update(right_hash);
+    parent.left = Some(match parent.left{
+      None =>{ newtree }
+      Some(next_id) => { update_tree(ctx, next_id.id, newtree) }
+    });
+  }else{
+    parent.right = Some(match parent.right{
+      None => { newtree}
+      Some(next_id) => { update_tree(ctx, next_id.id, newtree) }
+    });
   };
-
-  hash.update( parent.id.to_be_bytes());
-  let result = hash.finalize();
-  parent.check = u256::from_be_bytes(*result.as_ref());
-  ctx.db.merkle_tree().id().update(parent).check
-
+  parent = ctx.db.merkle_tree().id().update(parent);
+  return HashPair { id: parent.id,  check: parent.getcheck() }
 }
 
 
@@ -100,8 +97,9 @@ pub fn init(_ctx: &ReducerContext) {
   // Called when the module is initially published
   _ctx.db.merkle_tree().insert(MerkleTree {
     id: U256::from(0u8),
-    check: U256::from(0u8),
-    left: None, right: None });
+    left: None,
+    right: None
+});
 }
 
 #[spacetimedb::reducer(client_connected)]

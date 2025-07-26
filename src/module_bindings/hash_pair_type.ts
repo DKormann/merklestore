@@ -32,18 +32,15 @@ import {
   type ReducerEventContextInterface,
   type SubscriptionEventContextInterface,
 } from "@clockworklabs/spacetimedb-sdk";
-import { HashPair as __HashPair } from "./hash_pair_type";
-
-export type MerkleTree = {
+export type HashPair = {
   id: bigint,
-  left: __HashPair | undefined,
-  right: __HashPair | undefined,
+  check: bigint,
 };
 
 /**
  * A namespace for generated helper functions.
  */
-export namespace MerkleTree {
+export namespace HashPair {
   /**
   * A function which returns this type represented as an AlgebraicType.
   * This function is derived from the AlgebraicType used to generate this type.
@@ -51,17 +48,16 @@ export namespace MerkleTree {
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
       new ProductTypeElement("id", AlgebraicType.createU256Type()),
-      new ProductTypeElement("left", AlgebraicType.createOptionType(__HashPair.getTypeScriptAlgebraicType())),
-      new ProductTypeElement("right", AlgebraicType.createOptionType(__HashPair.getTypeScriptAlgebraicType())),
+      new ProductTypeElement("check", AlgebraicType.createU256Type()),
     ]);
   }
 
-  export function serialize(writer: BinaryWriter, value: MerkleTree): void {
-    MerkleTree.getTypeScriptAlgebraicType().serialize(writer, value);
+  export function serialize(writer: BinaryWriter, value: HashPair): void {
+    HashPair.getTypeScriptAlgebraicType().serialize(writer, value);
   }
 
-  export function deserialize(reader: BinaryReader): MerkleTree {
-    return MerkleTree.getTypeScriptAlgebraicType().deserialize(reader);
+  export function deserialize(reader: BinaryReader): HashPair {
+    return HashPair.getTypeScriptAlgebraicType().deserialize(reader);
   }
 
 }

@@ -33,6 +33,8 @@ import {
   type SubscriptionEventContextInterface,
 } from "@clockworklabs/spacetimedb-sdk";
 import { MerkleTree } from "./merkle_tree_type";
+import { HashPair as __HashPair } from "./hash_pair_type";
+
 import { type EventContext, type Reducer, RemoteReducers, RemoteTables } from ".";
 
 /**
