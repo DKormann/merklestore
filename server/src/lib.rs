@@ -9,26 +9,17 @@ pub struct Item {
   id: u256
 }
 
-
   
 
 #[spacetimedb::table(name = merkle_tree, public)]
 pub struct MerkleTree {
   #[primary_key]
   id: u256,
+  check: u256,
   left: Option<u256>,
   right: Option<u256>
 }
 
-
-pub fn join_hashes(left: u256, right: u256) -> u256 {
-  let mut hasher = Sha256::new();
-  hasher.update(left.to_be_bytes());
-  hasher.update(right.to_be_bytes());
-  let result = hasher.finalize();
-  u256::from_be_bytes(*result.as_ref())
-
-}
 
 
 #[spacetimedb::reducer]
@@ -41,12 +32,55 @@ pub fn put_item(ctx: &ReducerContext, id: u256) {
 }
 
 
-pub fn add_tree(ctx: &ReducerContext, id: u256) {
-  let z = U256::from(0u8);
-  let mut root = ctx.db.merkle_tree().id().find(z).unwrap();
-  while true{
-    const nextat = root.id +
-  }
+#[spacetimedb::reducer]
+pub fn add_tree(ctx:&ReducerContext, id: u256){
+
+  let tree = MerkleTree {
+    id,
+    check: id,
+    left: None,
+    right: None
+  };
+  let tree = ctx.db.merkle_tree().insert(tree);
+  update_tree(ctx, u256::from(0u8), tree);
+}
+
+pub fn update_tree(ctx: &ReducerContext, root: u256, tree:MerkleTree) -> u256 {
+  let mut parent = ctx.db.merkle_tree().id().find(root).unwrap();
+  let id = tree.id;
+  let mut hash = Sha256::new();
+  let mut hash_update = |id:u256| {
+    hash.update(id.to_be_bytes());
+  };
+  if parent.id > id{
+    let left_hash =match parent.left {
+      None => {
+        parent.left = Some(id);
+        id }
+      Some(next_id) => { update_tree(ctx, next_id, tree) }
+    };
+    hash_update(left_hash);
+    if let Some(right) = parent.right {
+      hash_update(ctx.db.merkle_tree().id().find(right).unwrap().check);
+    }
+  } else {
+    if let Some(left) = parent.left {
+      hash_update(ctx.db.merkle_tree().id().find(left).unwrap().check);
+    }
+    let right_hash = match parent.right {
+      None => {
+        parent.right = Some(id);
+        id}
+      Some(next_id)=> { update_tree(ctx, next_id, tree)}
+    };
+    hash_update(right_hash);
+  };
+
+  hash.update( parent.id.to_be_bytes());
+  let result = hash.finalize();
+  parent.check = u256::from_be_bytes(*result.as_ref());
+  ctx.db.merkle_tree().id().update(parent).check
+
 }
 
 
@@ -63,6 +97,7 @@ pub fn init(_ctx: &ReducerContext) {
   // Called when the module is initially published
   _ctx.db.merkle_tree().insert(MerkleTree {
     id: U256::from(0u8),
+    check: U256::from(0u8),
     left: None, right: None });
 }
 
